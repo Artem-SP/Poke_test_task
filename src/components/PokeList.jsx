@@ -1,122 +1,93 @@
-import { useSelector } from "react-redux";
-import { getAll } from "../redux/reducers/getAll";
-import { getLimit } from "../redux/reducers/getLimit";
-import { useStoreDispatch } from "../redux/store";
-import { useEffect, useState } from "react";
-import Pagination from "./Pagination";
-// import { addProduct } from "../redux/products";
+import { useEffect, useState } from 'react'
 
-const PokeList = ({ count }) => {
-  console.log(count);
+import { useSelector } from 'react-redux'
+import { useStoreDispatch } from '../redux/store'
 
-  const pokePerPage = 50;
+import { getAll } from '../redux/reducers/getAll'
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [currentPokeList, setCurrentPokeList] = useState([]);
-  const [lastPokeIndex, setLastPokeIndex] = useState(pokePerPage);
-  const [searchValue, setSearchValue] = useState("");
+import { Link, useNavigate } from 'react-router-dom'
 
-  const fitstPokeIndex = lastPokeIndex - pokePerPage;
+import Types from './Types'
 
-  // const lastPokeIndex = currentPage * pokePerPage;
+const PokeList = () => {
+  const pokePerPage = 50
+  const navigate = useNavigate()
 
-  const dispatch = useStoreDispatch();
+  const [currentPokeList, setCurrentPokeList] = useState([])
+  const [lastPokeIndex, setLastPokeIndex] = useState(pokePerPage)
 
-  // const {
-  //   poke: { count },
-  // } = useSelector((state) => state);
-  const {
-    poke: { allPokemon },
-  } = useSelector((state) => state);
+  const firstPokeIndex = lastPokeIndex - pokePerPage
+
+  const dispatch = useStoreDispatch()
+
+  const { allPokemon, status, error } = useSelector(state => state.poke)
 
   useEffect(() => {
-    dispatch(getLimit(count));
-  }, [dispatch]);
+    dispatch(getAll())
+  }, [dispatch])
 
   useEffect(() => {
-    // dispatch(getLimit());
-    // dispatch(getAll({ start: 1, end: 10 }));
-
-    // console.log(count);
-    dispatch(getAll(count));
-  }, [dispatch]);
+    if (error) {
+      navigate('/error')
+    }
+  }, [error])
 
   useEffect(() => {
     if (allPokemon) {
-      setCurrentPokeList(allPokemon.slice(fitstPokeIndex, lastPokeIndex));
+      setCurrentPokeList(allPokemon.slice(firstPokeIndex, lastPokeIndex))
     }
-  }, [allPokemon]);
+  }, [allPokemon])
 
   useEffect(() => {
-    document.addEventListener("scroll", scrollHandler);
+    document.addEventListener('scroll', scrollHandler)
     return function () {
-      document.removeEventListener("scroll", scrollHandler);
-    };
-  });
+      document.removeEventListener('scroll', scrollHandler)
+    }
+  })
 
-  const scrollHandler = (e) => {
+  const scrollHandler = e => {
     if (
       e.target.documentElement.scrollHeight -
         (e.target.documentElement.scrollTop + window.innerHeight) <
         100 &&
-      lastPokeIndex + pokePerPage < count
+      lastPokeIndex + pokePerPage < allPokemon.length
     ) {
-      setLastPokeIndex((prev) => prev + pokePerPage);
+      setLastPokeIndex(prev => prev + pokePerPage)
 
-      setCurrentPokeList(allPokemon.slice(0, fitstPokeIndex + lastPokeIndex));
+      setCurrentPokeList(allPokemon.slice(0, firstPokeIndex + lastPokeIndex))
     }
-  };
+  }
 
-  const handleSearch = (e) => {
-    let filteredPoke = allPokemon.filter((poke) => {
-      return poke.name.toLowerCase().startsWith(e.target.value.toLowerCase());
-    });
+  const handleSearch = e => {
+    let filteredPoke = allPokemon.filter(poke => {
+      return poke.name.toLowerCase().startsWith(e.target.value.toLowerCase())
+    })
 
-    setCurrentPokeList(filteredPoke);
-  };
-
-  console.log(allPokemon);
+    setCurrentPokeList(filteredPoke)
+  }
 
   return (
     <div className="container">
       <div>
         <form action="">
-          <input type="text" name="" id="" onChange={(e) => handleSearch(e)} />
+          <input type="text" name="" id="" onChange={e => handleSearch(e)} />
         </form>
       </div>
-      {currentPokeList && (
+      <Types />
+      {status !== 'resolved' ? (
+        <div>Loading...</div>
+      ) : (
         <div>
-          {currentPokeList.map((item) => (
-            <div key={item.name}>{item.name}</div>
+          {currentPokeList.map(item => (
+            <Link key={item.name} to={`/${item.name}`} name={item.name}>
+              {item.name}
+              <br />
+            </Link>
           ))}
         </div>
       )}
-
-      {/* <Pagination
-        pokePerPage={pokePerPage}
-        count={count}
-        paginate={paginate}
-        setCurrentPokeList={setCurrentPokeList}
-        lastPokeIndex={lastPokeIndex}
-        fitstPokeIndex={fitstPokeIndex}
-        allPokemon={allPokemon}
-
-        // allPokemon={allPokemon}
-      /> */}
-      {/* 
-      <button
-        onClick={() => {
-          dispatch(
-            addProduct({
-              title: "New product",
-            })
-          );
-        }}
-      >
-        Add
-      </button> */}
     </div>
-  );
-};
+  )
+}
 
-export default PokeList;
+export default PokeList
